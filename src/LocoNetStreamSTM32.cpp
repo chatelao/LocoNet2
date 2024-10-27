@@ -37,6 +37,7 @@
 #ifdef ARDUINO_ARCH_STM32
 
 #include <LocoNetStreamSTM32.h>
+#include <stm32yyxx_ll_usart.h>
 
 LocoNetStreamSTM32::LocoNetStreamSTM32(HardwareSerial * serialPort, uint8_t rxPin, uint8_t txPin, LocoNetBus *bus, bool rxPinInvert, bool txPinInvert) : LocoNetStream(bus)
 {
@@ -54,21 +55,12 @@ void LocoNetStreamSTM32::start(void)
 	_serialPort->setRx(_rxPin);
 	_serialPort->setTx(_txPin);
 	
-// Who knows if the Rx and Tx Pin Inversion logic will work.
-	UART_HandleTypeDef * handlePtr = _serialPort->getHandle();
-		
-    if(_rxPinInvert)
- 	{
- 		handlePtr->AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_RXINVERT_INIT;
-	    handlePtr->AdvancedInit.RxPinLevelInvert = UART_ADVFEATURE_RXINV_ENABLE;
-	}
+	USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
 	
-	if(_txPinInvert)
-	{
-		handlePtr->AdvancedInit.AdvFeatureInit |= UART_ADVFEATURE_TXINVERT_INIT;
-		handlePtr->AdvancedInit.TxPinLevelInvert = UART_ADVFEATURE_TXINV_ENABLE;
-	}
+	LL_USART_SetRXPinLevel(USARTx, (_rxPinInvert) ? LL_USART_RXPIN_LEVEL_INVERTED : LL_USART_RXPIN_LEVEL_STANDARD);
 
+	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
+		
 	_serialPort->begin(LOCONET_BAUD);
 	
 	_instance = this;
@@ -113,14 +105,14 @@ void LocoNetStreamSTM32::afterSend(void)
 
 void LocoNetStreamSTM32::sendBreak(void)
 {
-// to-do figure out how to do the BREAK
-//
-// get the HAL to do it if supported 
-//
-// One option
-// Invert the Tx Line polarity
-// delayMicroseconds(CollisionTimeoutIncrement);
-// Revert the Tx Line polarity
+	// Generate a BREAK by inverting the UART Tx output to cause the LocoNet to be pulled-down, delay(), then revert the UART Tx output to normal polarity, to release the LocoNet
+	USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
+	
+	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_STANDARD : LL_USART_TXPIN_LEVEL_INVERTED);
+	
+	delayMicroseconds(CollisionTimeoutIncrement);
+	
+	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
 };
 
 #endif
