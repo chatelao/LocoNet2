@@ -20,3 +20,15 @@ This architecture allows for several sources of LocoNet messages to co-exist (ph
 Upon receiving a LocoNet message from outside world, the source classes send messages to LocoNetDispatcher, which broadcasts them to all other LocoNet sources that emit the message to outside world.
 
 `LocoNet` class is now an alias for `LocoNetDispatcher`. Existing utility classes (`LocoNetThrottle`, `LocoNetFastClock` etc) still use `LocoNet` class and have not changed much. Probably they will work with minor modifications.
+
+Developers:
+   Use of the supplied git pre-commit hook is encouraged.  This will require installation of the 'astyle' package for formatting source file.
+   See http://astyle.sourceforge.net for details on this package.
+
+   On Linux or Mac development machines, run the following command after you clone the repository:
+
+    	ln -s support/pre-commit .git/hooks/pre-commit
+
+   Reformatting the source code to the preferred style is easy using astyle.  Just run:
+   
+   		astyle --options=.astylerc --suffix=none --recursive "*.h" "*.cpp" "*.ino"

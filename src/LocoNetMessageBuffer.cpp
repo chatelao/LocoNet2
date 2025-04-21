@@ -60,52 +60,65 @@
 
 #define		LN_CHECKSUM_SEED        (uint8_t)0xFF
 
-LocoNetMessageBuffer::LocoNetMessageBuffer() {
-	for(int i = 0; i < LN_BUF_SIZE; i++) {
-		buffer[i] = 0;
-	}
-	index = 0;
-	expLen = 0;
-	checkSum = LN_CHECKSUM_SEED;
-	stats.rxErrors = 0;
-	stats.rxPackets = 0;
+LocoNetMessageBuffer::LocoNetMessageBuffer()
+{
+    for (int i = 0; i < LN_BUF_SIZE; i++)
+    {
+        buffer[i] = 0;
+    }
+    index = 0;
+    expLen = 0;
+    checkSum = LN_CHECKSUM_SEED;
+    stats.rxErrors = 0;
+    stats.rxPackets = 0;
 }
 
-lnMsg *LocoNetMessageBuffer::getMsg() {
-	if(index < 2) {
-		return nullptr;
-	}
+lnMsg *LocoNetMessageBuffer::getMsg()
+{
+    if (index < 2)
+    {
+        return nullptr;
+    }
 
-	if(!expLen) {
-		// If it's a fixed length packet, compute the length from the OPC_Code, else get the length from the byte 1
-		expLen = LOCONET_PACKET_SIZE(buffer[0], buffer[1]);
-	}
+    if (!expLen)
+    {
+        // If it's a fixed length packet, compute the length from the OPC_Code, else get the length from the byte 1
+        expLen = LOCONET_PACKET_SIZE (buffer[0], buffer[1]);
+    }
 
-	if(expLen == index) {
-		if(checkSum == 0) {
-			stats.rxPackets++;
-			return (lnMsg*)buffer;
-		} else {
-			stats.rxErrors++;
-		}
-	}
+    if (expLen == index)
+    {
+        if (checkSum == 0)
+        {
+            stats.rxPackets++;
+            return (lnMsg*) buffer;
+        }
+        else
+        {
+            stats.rxErrors++;
+        }
+    }
 
-	return nullptr;
+    return nullptr;
 }
 
-lnMsg *LocoNetMessageBuffer::addByte(uint8_t newByte) {
-	if(index < LN_BUF_SIZE) {
-		// Reset the buffer to empty when a LocoNet OPC code is received
-		if( (newByte & 0x80) != 0) {
-			index = 0;
-			expLen = 0;
-			checkSum = LN_CHECKSUM_SEED;
-		}
-		buffer[index++] = newByte;
-		if((index <= 2 ) || (index <= expLen)) {
-		    checkSum ^= newByte;
-		}
-	}
+lnMsg *LocoNetMessageBuffer::addByte (uint8_t newByte)
+{
+    if (index < LN_BUF_SIZE)
+    {
+        // Reset the buffer to empty when a LocoNet OPC code is received
+        if ( (newByte & 0x80) != 0)
+        {
+            index = 0;
+            expLen = 0;
+            checkSum = LN_CHECKSUM_SEED;
+        }
+        buffer[index++] = newByte;
+        if ( (index <= 2) || (index <= expLen))
+        {
+            checkSum ^= newByte;
+        }
+    }
 
-	return getMsg();
+    return getMsg();
 }

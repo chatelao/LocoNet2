@@ -38,38 +38,38 @@
 
 #include <LocoNetStreamRP2040.h>
 
-LocoNetStreamRP2040::LocoNetStreamRP2040(SerialUART * serialPort, int8_t rxPin, int8_t txPin, LocoNetBus *bus, bool rxPinInvert, bool txPinInvert) : LocoNetStream(bus)
+LocoNetStreamRP2040::LocoNetStreamRP2040 (SerialUART * serialPort, int8_t rxPin, int8_t txPin, LocoNetBus *bus, bool rxPinInvert, bool txPinInvert) : LocoNetStream (bus)
 {
-	_serialPort = serialPort;
-	_rxPin = rxPin;
-	_txPin = txPin;
-	_rxPinInvert = rxPinInvert;
-	_txPinInvert = txPinInvert;
+    _serialPort = serialPort;
+    _rxPin = rxPin;
+    _txPin = txPin;
+    _rxPinInvert = rxPinInvert;
+    _txPinInvert = txPinInvert;
 };
 
-void LocoNetStreamRP2040::start(void)
+void LocoNetStreamRP2040::start (void)
 {
-	begin(_serialPort);
-	
-	_serialPort->setRX(_rxPin);
-	_serialPort->setTX(_txPin);
-	
-	_serialPort->setFIFOSize(8);
-	_serialPort->begin(LOCONET_BAUD);
-	
-	if(_rxPinInvert)
-		gpio_set_inover(_rxPin, GPIO_OVERRIDE_INVERT);
-	
-	if(_txPinInvert)
-		gpio_set_outover(_txPin, GPIO_OVERRIDE_INVERT);
-	
-	_instance = this;
-	attachInterrupt(_rxPin, isr, FALLING);
+    begin (_serialPort);
+
+    _serialPort->setRX (_rxPin);
+    _serialPort->setTX (_txPin);
+
+    _serialPort->setFIFOSize (8);
+    _serialPort->begin (LOCONET_BAUD);
+
+    if (_rxPinInvert)
+        gpio_set_inover (_rxPin, GPIO_OVERRIDE_INVERT);
+
+    if (_txPinInvert)
+        gpio_set_outover (_txPin, GPIO_OVERRIDE_INVERT);
+
+    _instance = this;
+    attachInterrupt (_rxPin, isr, FALLING);
 };
 
-void LocoNetStreamRP2040::finish(void)
+void LocoNetStreamRP2040::finish (void)
 {
-	detachInterrupt(_rxPin);
+    detachInterrupt (_rxPin);
 }
 
 // The Interrupt Handler glue was from this forum post:
@@ -77,34 +77,35 @@ void LocoNetStreamRP2040::finish(void)
 
 LocoNetStreamRP2040 * LocoNetStreamRP2040::_instance;
 
-void LocoNetStreamRP2040::isr(void)
+void LocoNetStreamRP2040::isr (void)
 {
-  _instance->handleLocoNetActivityInterrupt();
+    _instance->handleLocoNetActivityInterrupt();
 }
 
-void LocoNetStreamRP2040::handleLocoNetActivityInterrupt(void)
+void LocoNetStreamRP2040::handleLocoNetActivityInterrupt (void)
 {
-	_LastLocoNetActivityMicros = micros();
+    _LastLocoNetActivityMicros = micros();
 }
 
-bool LocoNetStreamRP2040::isBusy(void)
-{ 
-	if(!gpio_get(_rxPin))	// If the Rx Pin is LOW then the UART will be active so return true
-		return true;
-		 
-	return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
+bool LocoNetStreamRP2040::isBusy (void)
+{
+    if (!gpio_get (_rxPin))	// If the Rx Pin is LOW then the UART will be active so return true
+        return true;
+
+    return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
 };
 
-void LocoNetStreamRP2040::beforeSend(void){};
+void LocoNetStreamRP2040::beforeSend (void) {};
 
-void LocoNetStreamRP2040::afterSend(void){};
+void LocoNetStreamRP2040::afterSend (void) {};
 
-void LocoNetStreamRP2040::sendBreak(void)
-{		// Until I can get a better solution like calling the UART Break function,
-		// inverting the Tx Pin as appropriate is as good as it gets for now
-	gpio_set_outover(_txPin, _txPinInvert ? GPIO_OVERRIDE_NORMAL : GPIO_OVERRIDE_INVERT);
-	delayMicroseconds(CollisionTimeoutIncrement);
-	gpio_set_outover(_txPin, _txPinInvert ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
+void LocoNetStreamRP2040::sendBreak (void)
+{
+    // Until I can get a better solution like calling the UART Break function,
+    // inverting the Tx Pin as appropriate is as good as it gets for now
+    gpio_set_outover (_txPin, _txPinInvert ? GPIO_OVERRIDE_NORMAL : GPIO_OVERRIDE_INVERT);
+    delayMicroseconds (CollisionTimeoutIncrement);
+    gpio_set_outover (_txPin, _txPinInvert ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);
 };
 
 #endif

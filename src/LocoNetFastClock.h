@@ -50,37 +50,41 @@
  roll-over for the minutes.
  ***********************************************************************************************/
 
-typedef enum {
+typedef enum
+{
     FC_ST_IDLE, FC_ST_REQ_TIME, FC_ST_READY, FC_ST_DISABLED,
 } FC_STATE;
 
-class LocoNetFastClock {
-    public:
-        LocoNetFastClock(LocoNet & locoNet, bool DCS100CompatibleSpeed, bool CorrectDCS100Clock);
-        void poll(void);
-        void process66msActions(void);
-        /**
-         * Registers a callback for when the fast clock updates
-         *                               Rate       Day      Hour   Minute   Sync
-         */
-        void onUpdate(std::function<void(uint8_t, uint8_t, uint8_t, uint8_t, bool)> callback) {
-            _updateCallback = callback;
-        }
+class LocoNetFastClock
+{
+public:
+    LocoNetFastClock (LocoNet & locoNet, bool DCS100CompatibleSpeed, bool CorrectDCS100Clock);
+    void poll (void);
+    void process66msActions (void);
+    /**
+     * Registers a callback for when the fast clock updates
+     *                               Rate       Day      Hour   Minute   Sync
+     */
+    void onUpdate (std::function<void (uint8_t, uint8_t, uint8_t, uint8_t, bool) > callback)
+    {
+        _updateCallback = callback;
+    }
 
-        /**
-         * Registers a callback for the fractional minute updates
-         */
-        void onFractionalMinUpdate(std::function<void(uint16_t)> callback) {
-            _fractionalMinCallback = callback;
-        }
-    private:
-        LocoNet &_locoNet;
-        bool _DCS100CompatibleSpeed;
-        bool _CorrectDCS100Clock;
-        FC_STATE _state;
-        lnMsg _data;
+    /**
+     * Registers a callback for the fractional minute updates
+     */
+    void onFractionalMinUpdate (std::function<void (uint16_t) > callback)
+    {
+        _fractionalMinCallback = callback;
+    }
+private:
+    LocoNet &_locoNet;
+    bool _DCS100CompatibleSpeed;
+    bool _CorrectDCS100Clock;
+    FC_STATE _state;
+    lnMsg _data;
 
-        void processMessage(const lnMsg *LnPacket);
-        std::function<void(uint8_t, uint8_t, uint8_t, uint8_t, bool)> _updateCallback;
-        std::function<void(uint16_t)> _fractionalMinCallback;
+    void processMessage (const lnMsg *LnPacket);
+    std::function<void (uint8_t, uint8_t, uint8_t, uint8_t, bool) > _updateCallback;
+    std::function<void (uint16_t) > _fractionalMinCallback;
 };

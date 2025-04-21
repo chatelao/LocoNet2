@@ -88,173 +88,214 @@
 #define LNCV_FLAG_RO 0x01
 // other flags are currently unused
 
-LocoNetCV::LocoNetCV(LocoNet &locoNet) : _locoNet(locoNet) {
-    _locoNet.onPacket(OPC_IMM_PACKET, std::bind(&LocoNetCV::processLNCVMessage, this, std::placeholders::_1));
-    _locoNet.onPacket(OPC_PEER_XFER, std::bind(&LocoNetCV::processLNCVMessage, this, std::placeholders::_1));
+LocoNetCV::LocoNetCV (LocoNet &locoNet) : _locoNet (locoNet)
+{
+    _locoNet.onPacket (OPC_IMM_PACKET, std::bind (&LocoNetCV::processLNCVMessage, this, std::placeholders::_1));
+    _locoNet.onPacket (OPC_PEER_XFER, std::bind (&LocoNetCV::processLNCVMessage, this, std::placeholders::_1));
 }
 
-void LocoNetCV::processLNCVMessage(const lnMsg * rxPacket) {
-    DEBUG("Possibly a LNCV message.");
+void LocoNetCV::processLNCVMessage (const lnMsg * rxPacket)
+{
+    DEBUG ("Possibly a LNCV message.");
     // Either of these message types may be a LNCV message
     // Sanity check: Message length, Verify addresses
     lnMsg rxCopy = *rxPacket;
     lnMsg * LnPacket = &rxCopy;
-    if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH) {
+    if (LnPacket->ub.mesg_size == 15 && LnPacket->ub.DSTL == LNCV_MODULE_DSTL && LnPacket->ub.DSTH == LNCV_MODULE_DSTH)
+    {
         // It is a LNCV programming message
-        computeBytesFromPXCT(LnPacket->ub);
-        DEBUG("Message bytes: %d %x %x %x\n",
-            LnPacket->ub.ReqId,
-            LnPacket->ub.payload.data.deviceClass,
-            LnPacket->ub.payload.data.lncvNumber,
-            LnPacket->ub.payload.data.lncvValue);
+        computeBytesFromPXCT (LnPacket->ub);
+        DEBUG ("Message bytes: %d %x %x %x\n",
+               LnPacket->ub.ReqId,
+               LnPacket->ub.payload.data.deviceClass,
+               LnPacket->ub.payload.data.lncvNumber,
+               LnPacket->ub.payload.data.lncvValue);
         lnMsg response;
 
-        switch (LnPacket->ub.ReqId) {
+        switch (LnPacket->ub.ReqId)
+        {
         case LNCV_REQID_CFGREQUEST:
-            if (LnPacket->ub.payload.data.deviceClass == 0xFFFF && LnPacket->ub.payload.data.lncvNumber == 0x0000 && LnPacket->ub.payload.data.lncvValue == 0xFFFF) {
+            if (LnPacket->ub.payload.data.deviceClass == 0xFFFF && LnPacket->ub.payload.data.lncvNumber == 0x0000 && LnPacket->ub.payload.data.lncvValue == 0xFFFF)
+            {
                 // This is a discover message
-                DEBUG("LNCV discover: ");
-                if (discoveryCallback) {
-                    DEBUG(" executing...");
-                    if (discoveryCallback(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK) {
-                        makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x00);
-                        _locoNet.send(&response);
+                DEBUG ("LNCV discover: ");
+                if (discoveryCallback)
+                {
+                    DEBUG (" executing...");
+                    if (discoveryCallback (LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK)
+                    {
+                        makeLNCVresponse (response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x00);
+                        _locoNet.send (&response);
                     }
-                } else {
-                    DEBUG(" NOT EXECUTING!");
                 }
-            } else if (LnPacket->ub.payload.data.flags == 0x00) {
+                else
+                {
+                    DEBUG (" NOT EXECUTING!");
+                }
+            }
+            else if (LnPacket->ub.payload.data.flags == 0x00)
+            {
                 // This can only be a read message
-                DEBUG("LNCV read: ");
-                if (cvReadCallback) {
-                    DEBUG(" executing...");
-                    int8_t returnCode = cvReadCallback(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue);
-                    if (returnCode == LNCV_LACK_OK) {
+                DEBUG ("LNCV read: ");
+                if (cvReadCallback)
+                {
+                    DEBUG (" executing...");
+                    int8_t returnCode = cvReadCallback (LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue);
+                    if (returnCode == LNCV_LACK_OK)
+                    {
                         // return the read value
-                        makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue, 0x00); // TODO: D7 was 0x80 here, but spec says that it is unused.
-                        _locoNet.send(&response);
-                    } else if (returnCode >= 0) {
+                        makeLNCVresponse (response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue,
+                                          0x00); // TODO: D7 was 0x80 here, but spec says that it is unused.
+                        _locoNet.send (&response);
+                    }
+                    else if (returnCode >= 0)
+                    {
                         uint8_t old_opcode = (0x7F & LnPacket->ub.command);
-                        _locoNet.send(OPC_LONG_ACK, old_opcode, returnCode);
+                        _locoNet.send (OPC_LONG_ACK, old_opcode, returnCode);
                         // return a nack
                     }
-                } else {
-                    DEBUG(" NOT EXECUTING!");
                 }
-            } else {
+                else
+                {
+                    DEBUG (" NOT EXECUTING!");
+                }
+            }
+            else
+            {
                 // Its a "control" message
-                DEBUG("LNCV control: ");
-                if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00 && ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00)) {
-                    DEBUG("Illegal, ignoring.");
+                DEBUG ("LNCV control: ");
+                if ( (LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00 && ( (LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00))
+                {
+                    DEBUG ("Illegal, ignoring.");
                     // Illegal message, no action.
-                } else if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00) {
-                    DEBUG("Programming Start, ");
+                }
+                else if ( (LnPacket->ub.payload.data.flags & LNCV_FLAG_PRON) != 0x00)
+                {
+                    DEBUG ("Programming Start, ");
                     // LNCV PROGAMMING START
                     // We'll skip the check whether D[2]/D[3] are 0x0000.
-                    if (progStartCallback) {
-                        DEBUG(" executing...");
-                        if (progStartCallback(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK) {
-                            DEBUG("LNCV_LACK_OK %x %x\n", LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue);
-                            makeLNCVresponse(response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x80);
-                            delay(10); // for whatever reason, we need to delay, otherwise the message will not be sent.
-                            DEBUG("LoconetPacket: %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
-                                response.ub.command,
-                                response.ub.mesg_size,
-                                response.ub.SRC,
-                                response.ub.DSTL,
-                                response.ub.DSTH,
-                                response.ub.ReqId,
-                                response.ub.PXCT1,
-                                response.ub.payload.D[0],
-                                response.ub.payload.D[1],
-                                response.ub.payload.D[2],
-                                response.ub.payload.D[3],
-                                response.ub.payload.D[4],
-                                response.ub.payload.D[5],
-                                response.ub.payload.D[6]);
-                            DEBUG("Return Code from Send: %x\n", _locoNet.send(&response));
-                        } else { // not for us? then no reaction!
-                            DEBUG("Ignoring.\n");
+                    if (progStartCallback)
+                    {
+                        DEBUG (" executing...");
+                        if (progStartCallback (LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue) == LNCV_LACK_OK)
+                        {
+                            DEBUG ("LNCV_LACK_OK %x %x\n", LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue);
+                            makeLNCVresponse (response.ub, LnPacket->ub.SRC, LnPacket->ub.payload.data.deviceClass, 0x00, LnPacket->ub.payload.data.lncvValue, 0x80);
+                            delay (10); // for whatever reason, we need to delay, otherwise the message will not be sent.
+                            DEBUG ("LoconetPacket: %x %x %x %x %x %x %x %x %x %x %x %x %x %x\n",
+                                   response.ub.command,
+                                   response.ub.mesg_size,
+                                   response.ub.SRC,
+                                   response.ub.DSTL,
+                                   response.ub.DSTH,
+                                   response.ub.ReqId,
+                                   response.ub.PXCT1,
+                                   response.ub.payload.D[0],
+                                   response.ub.payload.D[1],
+                                   response.ub.payload.D[2],
+                                   response.ub.payload.D[3],
+                                   response.ub.payload.D[4],
+                                   response.ub.payload.D[5],
+                                   response.ub.payload.D[6]);
+                            DEBUG ("Return Code from Send: %x\n", _locoNet.send (&response));
                         }
-                    } else {
-                        DEBUG(" NOT EXECUTING!");
+                        else     // not for us? then no reaction!
+                        {
+                            DEBUG ("Ignoring.\n");
+                        }
+                    }
+                    else
+                    {
+                        DEBUG (" NOT EXECUTING!");
                     }
                 }
-                if ((LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00 && progStopCallback) {
+                if ( (LnPacket->ub.payload.data.flags & LNCV_FLAG_PROFF) != 0x00 && progStopCallback)
+                {
                     // LNCV PROGRAMMING END
-                    progStopCallback(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue);
+                    progStopCallback (LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvValue);
                 }
                 // Read-Only mode not implmeneted.
             }
 
-        break;
+            break;
         case LNCV_REQID_CFGWRITE:
-            if (cvWriteCallback) {
+            if (cvWriteCallback)
+            {
                 // Negative return code indicates that we are not interested in this message.
-                int8_t returnCode = cvWriteCallback(LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue);
-                if (returnCode >= 0) {
+                int8_t returnCode = cvWriteCallback (LnPacket->ub.payload.data.deviceClass, LnPacket->ub.payload.data.lncvNumber, LnPacket->ub.payload.data.lncvValue);
+                if (returnCode >= 0)
+                {
                     uint8_t old_opcode = (0x7F & LnPacket->ub.command);
-                    _locoNet.send(OPC_LONG_ACK, old_opcode, returnCode);
+                    _locoNet.send (OPC_LONG_ACK, old_opcode, returnCode);
                 }
             }
-        break;
+            break;
         }
     }
 }
 
-void LocoNetCV::makeLNCVresponse( UhlenbrockMsg & ub, uint8_t originalSource, uint16_t first, uint16_t second, uint16_t third, uint8_t last) {
-	ub.command = OPC_PEER_XFER;
-	ub.mesg_size = 15;
-	ub.SRC = LNCV_SRC_MODULE;
-	switch (originalSource) {
-		case LNCV_SRC_KPU:
-			// Only in case of SRC == 0x01 should something specific be done.
-			ub.DSTL = LNCV_INTELLIBOX_KPU_DSTL;
-			ub.DSTH = LNCV_INTELLIBOX_KPU_DSTH;
-		break;
-		default:
-			ub.DSTL = originalSource;
-			ub.DSTH = 0x00;
-	}
-	ub.ReqId = LNCV_REQID_CFGREAD;
-	ub.PXCT1 = 0x00;
-	ub.payload.data.deviceClass = first;
-	ub.payload.data.lncvNumber = second;
-	ub.payload.data.lncvValue = third;
-	ub.payload.data.flags = last;
-	computePXCTFromBytes(ub);
+void LocoNetCV::makeLNCVresponse (UhlenbrockMsg & ub, uint8_t originalSource, uint16_t first, uint16_t second, uint16_t third, uint8_t last)
+{
+    ub.command = OPC_PEER_XFER;
+    ub.mesg_size = 15;
+    ub.SRC = LNCV_SRC_MODULE;
+    switch (originalSource)
+    {
+    case LNCV_SRC_KPU:
+        // Only in case of SRC == 0x01 should something specific be done.
+        ub.DSTL = LNCV_INTELLIBOX_KPU_DSTL;
+        ub.DSTH = LNCV_INTELLIBOX_KPU_DSTH;
+        break;
+    default:
+        ub.DSTL = originalSource;
+        ub.DSTH = 0x00;
+    }
+    ub.ReqId = LNCV_REQID_CFGREAD;
+    ub.PXCT1 = 0x00;
+    ub.payload.data.deviceClass = first;
+    ub.payload.data.lncvNumber = second;
+    ub.payload.data.lncvValue = third;
+    ub.payload.data.flags = last;
+    computePXCTFromBytes (ub);
 }
 
 
-void LocoNetCV::computeBytesFromPXCT( UhlenbrockMsg & ub) {
-	uint8_t mask(0x01);
-	// Data has only 7 bytes, so we consider only 7 bits from PXCT1
-	for (int i(0); i < 7; ++i) {
-		if ((ub.PXCT1 & mask) != 0x00) {
-			// Bit was set
-			ub.payload.D[i] |= 0x80;
-		}
-		mask <<= 1;
-	}
-	ub.PXCT1 = 0x00;
+void LocoNetCV::computeBytesFromPXCT (UhlenbrockMsg & ub)
+{
+    uint8_t mask (0x01);
+    // Data has only 7 bytes, so we consider only 7 bits from PXCT1
+    for (int i (0); i < 7; ++i)
+    {
+        if ( (ub.PXCT1 & mask) != 0x00)
+        {
+            // Bit was set
+            ub.payload.D[i] |= 0x80;
+        }
+        mask <<= 1;
+    }
+    ub.PXCT1 = 0x00;
 }
 
-void LocoNetCV::computePXCTFromBytes( UhlenbrockMsg & ub ) {
-	uint8_t mask(0x01);
-	ub.PXCT1 = 0x00;
-	// Data has only 7 bytes, so we consider only 7 bits from PXCT1
-	for (int i(0); i < 7; ++i) {
-		if ((ub.payload.D[i] & 0x80) != 0x00) {
-			ub.PXCT1 |= mask; // add bit to PXCT1
-			ub.payload.D[i] &= 0x7F;	// remove bit from data byte
-		}
-		mask <<= 1;
-	}
+void LocoNetCV::computePXCTFromBytes (UhlenbrockMsg & ub)
+{
+    uint8_t mask (0x01);
+    ub.PXCT1 = 0x00;
+    // Data has only 7 bytes, so we consider only 7 bits from PXCT1
+    for (int i (0); i < 7; ++i)
+    {
+        if ( (ub.payload.D[i] & 0x80) != 0x00)
+        {
+            ub.PXCT1 |= mask; // add bit to PXCT1
+            ub.payload.D[i] &= 0x7F;	// remove bit from data byte
+        }
+        mask <<= 1;
+    }
 }
 
-uint16_t LocoNetCV::getAddress(uint8_t lower, uint8_t higher) {
-	uint16_t result(higher);
-	result <<= 8;
-	result |= lower;
-	return result;
+uint16_t LocoNetCV::getAddress (uint8_t lower, uint8_t higher)
+{
+    uint16_t result (higher);
+    result <<= 8;
+    result |= lower;
+    return result;
 }

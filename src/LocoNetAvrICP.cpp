@@ -38,55 +38,63 @@
 
 #include "LocoNetAvrICP.h"
 
-bool LocoNetAvrIcp::begin(uint8_t txPin)
+bool LocoNetAvrIcp::begin (uint8_t txPin)
 {
 }
 
-LN_STATUS LocoNetAvrIcp::sendLocoNetPacketTry(lnMsg *txData, unsigned char ucPrioDelay)
+LN_STATUS LocoNetAvrIcp::sendLocoNetPacketTry (lnMsg *txData, unsigned char ucPrioDelay)
 {
-	txData = txData;						// Keep the Compilar happy
-	ucPrioDelay = ucPrioDelay;
+    txData = txData;						// Keep the Compilar happy
+    ucPrioDelay = ucPrioDelay;
 
-	return LN_IDLE;
+    return LN_IDLE;
 }
 
-uint8_t LocoNetSystemVariable::readSVStorage(uint16_t Offset ) {
-  if( Offset == SV_ADDR_EEPROM_SIZE)
-#if (E2END==0x0FF)	/* E2END is defined in processor include */
-								return SV_EE_SZ_256;
-#elif (E2END==0x1FF)
-								return SV_EE_SZ_512;
-#elif (E2END==0x3FF)
-								return SV_EE_SZ_1024;
-#elif (E2END==0x7FF)
-								return SV_EE_SZ_2048;
-#elif (E2END==0xFFF)
-								return SV_EE_SZ_4096;
-#else
-								return 0xFF;
-#endif
-  if( Offset == SV_ADDR_SW_VERSION ) {
-    return swVersion;
-  } else {
-    Offset -= 2;    // Map SV Address to EEPROM Offset - Skip SV_ADDR_EEPROM_SIZE & SV_ADDR_SW_VERSION
-    return eeprom_read_byte((uint8_t*)Offset);
-  }
-}
-
-uint8_t LocoNetSystemVariable::writeSVStorage(uint16_t Offset, uint8_t Value) {
-  Offset -= 2;      // Map SV Address to EEPROM Offset - Skip SV_ADDR_EEPROM_SIZE & SV_ADDR_SW_VERSION
-  uint8_t oldValue = eeprom_read_byte((uint8_t*)Offset);
-  if(oldValue != Value) {
-    eeprom_write_byte((uint8_t*)Offset, Value);
-    if(_svChangeCallback) {
-      _svChangeCallback(Offset+2, Value, oldValue);
+uint8_t LocoNetSystemVariable::readSVStorage (uint16_t Offset)
+{
+    if (Offset == SV_ADDR_EEPROM_SIZE)
+    #if (E2END==0x0FF)	/* E2END is defined in processor include */
+        return SV_EE_SZ_256;
+    #elif (E2END==0x1FF)
+        return SV_EE_SZ_512;
+    #elif (E2END==0x3FF)
+        return SV_EE_SZ_1024;
+    #elif (E2END==0x7FF)
+        return SV_EE_SZ_2048;
+    #elif (E2END==0xFFF)
+        return SV_EE_SZ_4096;
+    #else
+        return 0xFF;
+    #endif
+    if (Offset == SV_ADDR_SW_VERSION)
+    {
+        return swVersion;
     }
-  }
-  return eeprom_read_byte((uint8_t*)Offset);
+    else
+    {
+        Offset -= 2;    // Map SV Address to EEPROM Offset - Skip SV_ADDR_EEPROM_SIZE & SV_ADDR_SW_VERSION
+        return eeprom_read_byte ( (uint8_t*) Offset);
+    }
 }
 
-void LocoNetSystemVariable::reconfigure() {
-  wdt_enable(WDTO_15MS);  // prepare for reset
-  while (1) {}            // stop and wait for watchdog to knock us out
+uint8_t LocoNetSystemVariable::writeSVStorage (uint16_t Offset, uint8_t Value)
+{
+    Offset -= 2;      // Map SV Address to EEPROM Offset - Skip SV_ADDR_EEPROM_SIZE & SV_ADDR_SW_VERSION
+    uint8_t oldValue = eeprom_read_byte ( (uint8_t*) Offset);
+    if (oldValue != Value)
+    {
+        eeprom_write_byte ( (uint8_t*) Offset, Value);
+        if (_svChangeCallback)
+        {
+            _svChangeCallback (Offset+2, Value, oldValue);
+        }
+    }
+    return eeprom_read_byte ( (uint8_t*) Offset);
+}
+
+void LocoNetSystemVariable::reconfigure()
+{
+    wdt_enable (WDTO_15MS); // prepare for reset
+    while (1) {}            // stop and wait for watchdog to knock us out
 }
 #endif

@@ -39,28 +39,29 @@
 
 #include <LocoNetStream.h>
 
-class LocoNetStreamRP2040: public LocoNetStream {
+class LocoNetStreamRP2040: public LocoNetStream
+{
 public:
-  LocoNetStreamRP2040(SerialUART * serialPort, int8_t rxPin, int8_t txPin, LocoNetBus *bus, bool rxPinInvert=false, bool txPinInvert=false);
-  void start(void);
-  void finish(void);
+    LocoNetStreamRP2040 (SerialUART * serialPort, int8_t rxPin, int8_t txPin, LocoNetBus *bus, bool rxPinInvert=false, bool txPinInvert=false);
+    void start (void);
+    void finish (void);
 
-  bool isBusy(void);
-  void beforeSend(void);
-  void afterSend(void);
-  void sendBreak(void);
-  
-  static void isr (void);
-  void handleLocoNetActivityInterrupt(void);
+    bool isBusy (void);
+    void beforeSend (void);
+    void afterSend (void);
+    void sendBreak (void);
+
+    static void isr (void);
+    void handleLocoNetActivityInterrupt (void);
 
 private:
-  SerialUART * 		_serialPort;
-  int8_t			_rxPin;
-  bool				_rxPinInvert;
-  int8_t			_txPin;
-  bool				_txPinInvert;
-  
-  static LocoNetStreamRP2040 * _instance;
-  uint64_t volatile _LastLocoNetActivityMicros;
+    SerialUART * 	_serialPort;
+    int8_t			_rxPin;
+    bool			_rxPinInvert;
+    int8_t			_txPin;
+    bool			_txPinInvert;
+
+    static LocoNetStreamRP2040 * _instance;
+    uint64_t volatile _LastLocoNetActivityMicros;
 };
 #endif

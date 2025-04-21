@@ -83,31 +83,31 @@
 // 	#include "LocoNetESP32Hybrid.h"
 // 	#include "LocoNetESP32UART.h"
 // #endif
-// 
+//
 // #include "LocoNetStream.h"
 
 // Uncomment the next line to enable library DEBUG Messages
 #define DEBUG_OUTPUT
 
 #ifdef DEBUG_OUTPUT
-	#include <cstdio>
-	#if defined(ESP32) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
-		#include <esp32-hal-log.h>
-		#define DEBUG(format, ...) log_printf(ARDUHAL_LOG_FORMAT(D, format), ##__VA_ARGS__)
-		#define DEBUG_ISR(format, ...) ets_printf(ARDUHAL_LOG_FORMAT(D, format), ##__VA_ARGS__)
-	#elif defined(ARDUINO_ARCH_RENESAS) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
-	
-		extern void log_printf( const char * format, ... );
-		
-		#define DEBUG(...) { log_printf(__VA_ARGS__); log_printf("\n"); }
-		#define DEBUG_ISR(...) { log_printf(__VA_ARGS__); log_printf("\n"); }
-	#else
-		#define DEBUG(...) { printf(__VA_ARGS__); printf("\n"); }
-		#define DEBUG_ISR(...) { printf(__VA_ARGS__); printf("\n"); }
-	#endif
+    #include <cstdio>
+    #if defined(ESP32) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
+        #include <esp32-hal-log.h>
+        #define DEBUG(format, ...) log_printf(ARDUHAL_LOG_FORMAT(D, format), ##__VA_ARGS__)
+        #define DEBUG_ISR(format, ...) ets_printf(ARDUHAL_LOG_FORMAT(D, format), ##__VA_ARGS__)
+    #elif defined(ARDUINO_ARCH_RENESAS) && ARDUHAL_LOG_LEVEL >= ARDUHAL_LOG_LEVEL_DEBUG
+
+        extern void log_printf (const char * format, ...);
+
+        #define DEBUG(...) { log_printf(__VA_ARGS__); log_printf("\n"); }
+        #define DEBUG_ISR(...) { log_printf(__VA_ARGS__); log_printf("\n"); }
+    #else
+        #define DEBUG(...) { printf(__VA_ARGS__); printf("\n"); }
+        #define DEBUG_ISR(...) { printf(__VA_ARGS__); printf("\n"); }
+    #endif
 #else
-	#define DEBUG(format, ...)
-	#define DEBUG_ISR(format, ...)
+    #define DEBUG(format, ...)
+    #define DEBUG_ISR(format, ...)
 #endif
 
 typedef enum
@@ -167,121 +167,124 @@ constexpr uint32_t CDBackoffTimeoutIncrement = LocoNetTickTime * LN_CARRIER_TICK
 
 constexpr uint8_t CALLBACK_FOR_ALL_OPCODES=0xFF;
 
-inline uint8_t lnPacketSize(const LnMsg * msg) {
-    return LOCONET_PACKET_SIZE(msg->sz.command, msg->sz.mesg_size);
+inline uint8_t lnPacketSize (const LnMsg * msg)
+{
+    return LOCONET_PACKET_SIZE (msg->sz.command, msg->sz.mesg_size);
 }
 
 #define ADDR(hi,lo)  (   (lo) | (( (hi) & 0x0F ) << 7)    )
 
 #define MAX_BACKEND_CONSUMERS  10
 
-class LocoNetPhy: public LocoNetConsumer {
-    public:
-        LocoNetPhy(LocoNetBus * bus);
-        virtual bool begin();
-        virtual void end();
-        LN_STATUS send(LnMsg *txPacket);
-        LN_STATUS send(LnMsg *txPacket, uint8_t PrioDelay);
+class LocoNetPhy: public LocoNetConsumer
+{
+public:
+    LocoNetPhy (LocoNetBus * bus);
+    virtual bool begin();
+    virtual void end();
+    LN_STATUS send (LnMsg *txPacket);
+    LN_STATUS send (LnMsg *txPacket, uint8_t PrioDelay);
 
-        LnRxStats* getRxStats(void);
-        LnTxStats* getTxStats(void);
+    LnRxStats* getRxStats (void);
+    LnTxStats* getTxStats (void);
 
-        const char* getStatusStr(LN_STATUS status);
-    
-        LN_STATUS onMessage(const LnMsg& msg);
+    const char* getStatusStr (LN_STATUS status);
 
-    protected:
-        void consume(uint8_t newByte);
+    LN_STATUS onMessage (const LnMsg& msg);
 
-        virtual LN_STATUS sendLocoNetPacketTry(uint8_t *packetData, uint8_t packetLen, unsigned char ucPrioDelay) = 0;
-        LocoNetMessageBuffer rxBuffer;
-        LnTxStats txStats;
+protected:
+    void consume (uint8_t newByte);
 
-        LocoNetBus *bus;
+    virtual LN_STATUS sendLocoNetPacketTry (uint8_t *packetData, uint8_t packetLen, unsigned char ucPrioDelay) = 0;
+    LocoNetMessageBuffer rxBuffer;
+    LnTxStats txStats;
+
+    LocoNetBus *bus;
 
 };
 
-LnMsg makeLongAck(uint8_t replyToOpc, uint8_t ack);
+LnMsg makeLongAck (uint8_t replyToOpc, uint8_t ack);
 
-LnMsg makeMsg(uint8_t OpCode, uint8_t Data1, uint8_t Data2);
+LnMsg makeMsg (uint8_t OpCode, uint8_t Data1, uint8_t Data2);
 
-LnMsg makeSwRec(uint16_t address, bool output, bool thrown);
+LnMsg makeSwRec (uint16_t address, bool output, bool thrown);
 
-uint8_t writeChecksum(LnMsg &msg);
+uint8_t writeChecksum (LnMsg &msg);
 
-size_t formatMsg(const LnMsg &, char* dst, size_t len);
+size_t formatMsg (const LnMsg &, char* dst, size_t len);
 
-LN_STATUS requestSwitch(LocoNetBus *ln, uint16_t Address, uint8_t Output, uint8_t Direction);
-LN_STATUS reportSwitch(LocoNetBus *ln, uint16_t Address);
-LN_STATUS reportSensor(LocoNetBus *ln, uint16_t Address, uint8_t State);
-LN_STATUS reportPower(LocoNetBus *ln, bool state);
+LN_STATUS requestSwitch (LocoNetBus *ln, uint16_t Address, uint8_t Output, uint8_t Direction);
+LN_STATUS reportSwitch (LocoNetBus *ln, uint16_t Address);
+LN_STATUS reportSensor (LocoNetBus *ln, uint16_t Address, uint8_t State);
+LN_STATUS reportPower (LocoNetBus *ln, bool state);
 
-class LocoNetDispatcher : public LocoNetConsumer {
-    public:
-        LocoNetDispatcher(LocoNetBus *ln);
-        void begin() {}
-        void end() {}
+class LocoNetDispatcher : public LocoNetConsumer
+{
+public:
+    LocoNetDispatcher (LocoNetBus *ln);
+    void begin() {}
+    void end() {}
 
-        LN_STATUS send(LnMsg *txPacket);
-        //LN_STATUS send(LnMsg *TxPacket, uint8_t PrioDelay);
-        LN_STATUS send(uint8_t opCode, uint8_t data1, uint8_t data2);
-        //LN_STATUS send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
-        
-        LN_STATUS onMessage(const LnMsg& msg);
+    LN_STATUS send (LnMsg *txPacket);
+    //LN_STATUS send(LnMsg *TxPacket, uint8_t PrioDelay);
+    LN_STATUS send (uint8_t opCode, uint8_t data1, uint8_t data2);
+    //LN_STATUS send(uint8_t OpCode, uint8_t Data1, uint8_t Data2, uint8_t PrioDelay);
 
-        void processPacket(const LnMsg *packet);
+    LN_STATUS onMessage (const LnMsg& msg);
 
-        void onPacket(uint8_t opCode, std::function<void(const LnMsg *)> callback);
-        /**
-         * Registers a callback for when a sensor changes state
-         *                                     address   state
-         */
-        void onSensorChange(std::function<void(uint16_t, bool)> callback);
-        /**
-         * Registers a callback for when a switch is requested
-         *                                     address   output direction
-         */
-        void onSwitchRequest(std::function<void(uint16_t, bool, bool)> callback);
-        /**
-         * Registers a callback for when a switch/sensor status is reported
-         *                                     address   state switch/sensor
-         */
-        void onSwitchReport(std::function<void(uint16_t, bool, bool)> callback);
-        /**
-         * Registers a callback for when a switch is requested
-         *                                     address   output direction
-         */
-        void onSwitchState(std::function<void(uint16_t, bool, bool)> callback);
+    void processPacket (const LnMsg *packet);
 
-        /**
-         * Registers a callback for when power status changes
-         *                                    on/off
-         */
-        void onPowerChange(std::function<void(bool)> callback);
+    void onPacket (uint8_t opCode, std::function<void (const LnMsg *) > callback);
+    /**
+     * Registers a callback for when a sensor changes state
+     *                                     address   state
+     */
+    void onSensorChange (std::function<void (uint16_t, bool) > callback);
+    /**
+     * Registers a callback for when a switch is requested
+     *                                     address   output direction
+     */
+    void onSwitchRequest (std::function<void (uint16_t, bool, bool) > callback);
+    /**
+     * Registers a callback for when a switch/sensor status is reported
+     *                                     address   state switch/sensor
+     */
+    void onSwitchReport (std::function<void (uint16_t, bool, bool) > callback);
+    /**
+     * Registers a callback for when a switch is requested
+     *                                     address   output direction
+     */
+    void onSwitchState (std::function<void (uint16_t, bool, bool) > callback);
 
-        /**
-         * Registers a callback for when a MultiSense device reports status
-         *                                             id       index   AR/CB  Active
-         * AR = Auto-Reversing (true)
-         * CB = Circuit Breaker (false)
-         */
-        void onMultiSenseDeviceInfo(std::function<void(uint8_t, uint8_t, bool, bool)> callback);
+    /**
+     * Registers a callback for when power status changes
+     *                                    on/off
+     */
+    void onPowerChange (std::function<void (bool) > callback);
 
-        /**
-         * Registers a callback for when a MultiSense Transponder event is triggered
-         *                                              address    zone    locoaddr  presense
-         */
-        void onMultiSenseTransponder(std::function<void(uint16_t, uint8_t, uint16_t, bool)> callback);
+    /**
+     * Registers a callback for when a MultiSense device reports status
+     *                                             id       index   AR/CB  Active
+     * AR = Auto-Reversing (true)
+     * CB = Circuit Breaker (false)
+     */
+    void onMultiSenseDeviceInfo (std::function<void (uint8_t, uint8_t, bool, bool) > callback);
 
-    private:
-        LocoNetBus * ln;
-        bool processSwitchSensorMessage(LnMsg *lnPacket);
-        std::map<uint8_t, std::vector<std::function<void(const LnMsg *)> > > callbacks;
+    /**
+     * Registers a callback for when a MultiSense Transponder event is triggered
+     *                                              address    zone    locoaddr  presense
+     */
+    void onMultiSenseTransponder (std::function<void (uint16_t, uint8_t, uint16_t, bool) > callback);
+
+private:
+    LocoNetBus * ln;
+    bool processSwitchSensorMessage (LnMsg *lnPacket);
+    std::map<uint8_t, std::vector<std::function<void (const LnMsg *) > > > callbacks;
 };
 
 using LocoNet = LocoNetDispatcher;
 
-const char* fmtOpcode(uint8_t opcode);
+const char* fmtOpcode (uint8_t opcode);
 
 /************************************************************************************
  Call-back functions

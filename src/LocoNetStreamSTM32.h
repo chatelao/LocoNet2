@@ -39,28 +39,29 @@
 
 #include <LocoNetStream.h>
 
-class LocoNetStreamSTM32: public LocoNetStream {
+class LocoNetStreamSTM32: public LocoNetStream
+{
 public:
-  LocoNetStreamSTM32(HardwareSerial * serialPort, uint8_t rxPin, uint8_t txPin, LocoNetBus *bus, bool rxPinInvert=false, bool txPinInvert=false);
-  void start(void);
-  void finish(void);
+    LocoNetStreamSTM32 (HardwareSerial * serialPort, uint8_t rxPin, uint8_t txPin, LocoNetBus *bus, bool rxPinInvert=false, bool txPinInvert=false);
+    void start (void);
+    void finish (void);
 
-  bool isBusy(void);
-  void beforeSend(void);
-  void afterSend(void);
-  void sendBreak(void);
-  
-  static void isr (void);
-  void handleLocoNetActivityInterrupt(void);
+    bool isBusy (void);
+    void beforeSend (void);
+    void afterSend (void);
+    void sendBreak (void);
+
+    static void isr (void);
+    void handleLocoNetActivityInterrupt (void);
 
 private:
-  HardwareSerial * 		_serialPort;
-  uint8_t			_rxPin;
-  bool				_rxPinInvert;
-  uint8_t			_txPin;
-  bool				_txPinInvert;
-  
-  static LocoNetStreamSTM32 * _instance;
-  uint64_t volatile _LastLocoNetActivityMicros;
+    HardwareSerial * 		_serialPort;
+    uint8_t			_rxPin;
+    bool				_rxPinInvert;
+    uint8_t			_txPin;
+    bool				_txPinInvert;
+
+    static LocoNetStreamSTM32 * _instance;
+    uint64_t volatile _LastLocoNetActivityMicros;
 };
 #endif

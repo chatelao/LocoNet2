@@ -38,38 +38,38 @@
 
 #include <LocoNetStreamUnoR4.h>
 
-LocoNetStreamUnoR4::LocoNetStreamUnoR4(UART * serialPort, LocoNetBus *bus) : LocoNetStream(bus)
+LocoNetStreamUnoR4::LocoNetStreamUnoR4 (UART * serialPort, LocoNetBus *bus) : LocoNetStream (bus)
 {
-	_serialPort = serialPort;
+    _serialPort = serialPort;
 // 	_rxPin = rxPin;
 // 	_txPin = txPin;
 // 	_rxPinInvert = rxPinInvert;
 // 	_txPinInvert = txPinInvert;
 };
 
-void LocoNetStreamUnoR4::start(void)
+void LocoNetStreamUnoR4::start (void)
 {
-	begin(_serialPort);
-	
+    begin (_serialPort);
+
 // 	_serialPort->setRX(_rxPin);
 // 	_serialPort->setTX(_txPin);
-// 	
+//
 // 	_serialPort->setFIFOSize(8);
-	_serialPort->begin(LOCONET_BAUD);
-// 	
+    _serialPort->begin (LOCONET_BAUD);
+//
 // 	if(_rxPinInvert)
 // 		gpio_set_inover(_rxPin, GPIO_OVERRIDE_INVERT);
-// 	
+//
 // 	if(_txPinInvert)
 // 		gpio_set_outover(_txPin, GPIO_OVERRIDE_INVERT);
-// 	
-	_instance = this;
+//
+    _instance = this;
 // 	attachInterrupt(UART1_RX_PIN, isr, FALLING);
 };
 
-void LocoNetStreamUnoR4::finish(void)
+void LocoNetStreamUnoR4::finish (void)
 {
-	detachInterrupt(UART1_RX_PIN);
+    detachInterrupt (UART1_RX_PIN);
 }
 
 // The Interrupt Handler glue was from this forum post:
@@ -77,31 +77,32 @@ void LocoNetStreamUnoR4::finish(void)
 
 LocoNetStreamUnoR4 * LocoNetStreamUnoR4::_instance;
 
-void LocoNetStreamUnoR4::isr(void)
+void LocoNetStreamUnoR4::isr (void)
 {
-  _instance->handleLocoNetActivityInterrupt();
+    _instance->handleLocoNetActivityInterrupt();
 }
 
-void LocoNetStreamUnoR4::handleLocoNetActivityInterrupt(void)
+void LocoNetStreamUnoR4::handleLocoNetActivityInterrupt (void)
 {
-	_LastLocoNetActivityMicros = micros();
+    _LastLocoNetActivityMicros = micros();
 }
 
-bool LocoNetStreamUnoR4::isBusy(void)
-{ 
+bool LocoNetStreamUnoR4::isBusy (void)
+{
 // 	if(!digitalRead(UART1_RX_PIN))	// If the Rx Pin is LOW then the UART will be active so return true
 // 		return true;
-		 
-	return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
+
+    return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
 };
 
-void LocoNetStreamUnoR4::beforeSend(void){};
+void LocoNetStreamUnoR4::beforeSend (void) {};
 
-void LocoNetStreamUnoR4::afterSend(void){};
+void LocoNetStreamUnoR4::afterSend (void) {};
 
-void LocoNetStreamUnoR4::sendBreak(void)
-{		// Until I can get a better solution like calling the UART Break function,
-		// inverting the Tx Pin as appropriate is as good as it gets for now
+void LocoNetStreamUnoR4::sendBreak (void)
+{
+    // Until I can get a better solution like calling the UART Break function,
+    // inverting the Tx Pin as appropriate is as good as it gets for now
 // 	gpio_set_outover(_txPin, _txPinInvert ? GPIO_OVERRIDE_NORMAL : GPIO_OVERRIDE_INVERT);
 // 	delayMicroseconds(CollisionTimeoutIncrement);
 // 	gpio_set_outover(_txPin, _txPinInvert ? GPIO_OVERRIDE_INVERT : GPIO_OVERRIDE_NORMAL);

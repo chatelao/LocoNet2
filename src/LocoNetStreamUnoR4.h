@@ -39,28 +39,29 @@
 
 #include <LocoNetStream.h>
 
-class LocoNetStreamUnoR4: public LocoNetStream {
+class LocoNetStreamUnoR4: public LocoNetStream
+{
 public:
-  LocoNetStreamUnoR4(UART * serialPort, LocoNetBus *bus);
-  void start(void);
-  void finish(void);
+    LocoNetStreamUnoR4 (UART * serialPort, LocoNetBus *bus);
+    void start (void);
+    void finish (void);
 
-  bool isBusy(void);
-  void beforeSend(void);
-  void afterSend(void);
-  void sendBreak(void);
-  
-  static void isr (void);
-  void handleLocoNetActivityInterrupt(void);
+    bool isBusy (void);
+    void beforeSend (void);
+    void afterSend (void);
+    void sendBreak (void);
+
+    static void isr (void);
+    void handleLocoNetActivityInterrupt (void);
 
 private:
-  UART * 		_serialPort;
-  int8_t			_rxPin;
-  bool				_rxPinInvert;
-  int8_t			_txPin;
-  bool				_txPinInvert;
-  
-  static LocoNetStreamUnoR4 * _instance;
-  uint64_t volatile _LastLocoNetActivityMicros;
+    UART * 		_serialPort;
+    int8_t			_rxPin;
+    bool				_rxPinInvert;
+    int8_t			_txPin;
+    bool				_txPinInvert;
+
+    static LocoNetStreamUnoR4 * _instance;
+    uint64_t volatile _LastLocoNetActivityMicros;
 };
 #endif

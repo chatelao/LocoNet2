@@ -71,83 +71,103 @@ constexpr uint8_t FC_FRAC_RESET_LOW               = 0x6D;
 constexpr uint8_t FC_TIMER_TICKS                  = 65;    // 65ms ticks
 constexpr uint8_t FC_TIMER_TICKS_REQ              = 250;   // 250ms waiting for Response to FC Req
 
-LocoNetFastClock::LocoNetFastClock(LocoNet &locoNet, bool DCS100CompatibleSpeed, bool CorrectDCS100Clock) :
-  _locoNet(locoNet), _DCS100CompatibleSpeed(DCS100CompatibleSpeed), _CorrectDCS100Clock(CorrectDCS100Clock), _state(FC_ST_IDLE) {
-	  _locoNet.onPacket(OPC_WR_SL_DATA, std::bind(&LocoNetFastClock::processMessage, this, std::placeholders::_1));
-    _locoNet.onPacket(OPC_SL_RD_DATA, std::bind(&LocoNetFastClock::processMessage, this, std::placeholders::_1));
-    _locoNet.onPacket(FC_SLOT, std::bind(&LocoNetFastClock::processMessage, this, std::placeholders::_1));
+LocoNetFastClock::LocoNetFastClock (LocoNet &locoNet, bool DCS100CompatibleSpeed, bool CorrectDCS100Clock) :
+    _locoNet (locoNet), _DCS100CompatibleSpeed (DCS100CompatibleSpeed), _CorrectDCS100Clock (CorrectDCS100Clock), _state (FC_ST_IDLE)
+{
+    _locoNet.onPacket (OPC_WR_SL_DATA, std::bind (&LocoNetFastClock::processMessage, this, std::placeholders::_1));
+    _locoNet.onPacket (OPC_SL_RD_DATA, std::bind (&LocoNetFastClock::processMessage, this, std::placeholders::_1));
+    _locoNet.onPacket (FC_SLOT, std::bind (&LocoNetFastClock::processMessage, this, std::placeholders::_1));
 }
 
-void LocoNetFastClock::poll() {
-  _locoNet.send(OPC_RQ_SL_DATA, FC_SLOT, 0);
+void LocoNetFastClock::poll()
+{
+    _locoNet.send (OPC_RQ_SL_DATA, FC_SLOT, 0);
 }
 
-void LocoNetFastClock::processMessage(const lnMsg *packet) {
-  if(packet->fc.clk_cntrl & 0x40) {
-    if(_state >= FC_ST_REQ_TIME) {
-      _data.fc = packet->fc;
-      if(_updateCallback) {
-        _updateCallback(_data.fc.clk_rate, _data.fc.days,
-          (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
-          _data.fc.mins_60 - (127-60), true);
-      }
-      if(_fractionalMinCallback) {
-        _fractionalMinCallback(FC_FRAC_MIN_BASE - ((_data.fc.frac_minsh << 7) + _data.fc.frac_minsl));
-      }
-      _state = FC_ST_READY;
-    }
-  } else {
-    _state = FC_ST_DISABLED;
-  }
-}
-
-void LocoNetFastClock::process66msActions() {
-	// If we are all initialised and ready then increment accumulators
-  if(_state == FC_ST_READY) {
-    _data.fc.frac_minsl += _data.fc.clk_rate;
-    if(_data.fc.frac_minsl & 0x80) {
-      _data.fc.frac_minsl &= ~0x80;
-      _data.fc.frac_minsh++ ;
-      if(_data.fc.frac_minsh & 0x80) {
-				// For the next cycle prime the fraction of a minute accumulators
-        _data.fc.frac_minsl = FC_FRAC_RESET_LOW;
-
-				// If we are in FC_FLAG_DCS100_COMPATIBLE_SPEED mode we need to run faster
-				// by reducong the FRAC_MINS duration count by 128
-        _data.fc.frac_minsh = FC_FRAC_RESET_HIGH + _DCS100CompatibleSpeed;
-
-        _data.fc.mins_60++;
-        if(_data.fc.mins_60 >= 0x7F) {
-          _data.fc.mins_60 = 127 - 60 ;
-          _data.fc.hours_24++ ;
-          if(_data.fc.hours_24 & 0x80) {
-            _data.fc.hours_24 = 128 - 24 ;
-            _data.fc.days++;
-          }
+void LocoNetFastClock::processMessage (const lnMsg *packet)
+{
+    if (packet->fc.clk_cntrl & 0x40)
+    {
+        if (_state >= FC_ST_REQ_TIME)
+        {
+            _data.fc = packet->fc;
+            if (_updateCallback)
+            {
+                _updateCallback (_data.fc.clk_rate, _data.fc.days,
+                                 (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
+                                 _data.fc.mins_60 - (127-60), true);
+            }
+            if (_fractionalMinCallback)
+            {
+                _fractionalMinCallback (FC_FRAC_MIN_BASE - ( (_data.fc.frac_minsh << 7) + _data.fc.frac_minsl));
+            }
+            _state = FC_ST_READY;
         }
-        DEBUG("FastClockUpdate rate: %d, days: %d, time: %d:%d", _data.fc.clk_rate, _data.fc.days,
-            (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
-            _data.fc.mins_60 - (127-60));
-        // We either send a message out onto the LocoNet to change the time,
-        // which we will also see and act on or just notify our user
-        // function that our internal time has changed.
-        if(_CorrectDCS100Clock) {
-          _data.fc.command = OPC_WR_SL_DATA;
-          _locoNet.send(&_data);
-        } else if(_updateCallback) {
-          _updateCallback(_data.fc.clk_rate, _data.fc.days,
-            (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
-            _data.fc.mins_60 - (127-60), false);
-        }
-      }
     }
-    if(_fractionalMinCallback) {
-      _fractionalMinCallback(FC_FRAC_MIN_BASE - ((_data.fc.frac_minsh << 7) + _data.fc.frac_minsl));
+    else
+    {
+        _state = FC_ST_DISABLED;
     }
-  }
+}
 
-  if(_state == FC_ST_IDLE) {
-    _locoNet.send(OPC_RQ_SL_DATA, FC_SLOT, 0);
-    _state = FC_ST_REQ_TIME;
-  }
+void LocoNetFastClock::process66msActions()
+{
+    // If we are all initialised and ready then increment accumulators
+    if (_state == FC_ST_READY)
+    {
+        _data.fc.frac_minsl += _data.fc.clk_rate;
+        if (_data.fc.frac_minsl & 0x80)
+        {
+            _data.fc.frac_minsl &= ~0x80;
+            _data.fc.frac_minsh++ ;
+            if (_data.fc.frac_minsh & 0x80)
+            {
+                // For the next cycle prime the fraction of a minute accumulators
+                _data.fc.frac_minsl = FC_FRAC_RESET_LOW;
+
+                // If we are in FC_FLAG_DCS100_COMPATIBLE_SPEED mode we need to run faster
+                // by reducong the FRAC_MINS duration count by 128
+                _data.fc.frac_minsh = FC_FRAC_RESET_HIGH + _DCS100CompatibleSpeed;
+
+                _data.fc.mins_60++;
+                if (_data.fc.mins_60 >= 0x7F)
+                {
+                    _data.fc.mins_60 = 127 - 60 ;
+                    _data.fc.hours_24++ ;
+                    if (_data.fc.hours_24 & 0x80)
+                    {
+                        _data.fc.hours_24 = 128 - 24 ;
+                        _data.fc.days++;
+                    }
+                }
+                DEBUG ("FastClockUpdate rate: %d, days: %d, time: %d:%d", _data.fc.clk_rate, _data.fc.days,
+                       (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
+                       _data.fc.mins_60 - (127-60));
+                // We either send a message out onto the LocoNet to change the time,
+                // which we will also see and act on or just notify our user
+                // function that our internal time has changed.
+                if (_CorrectDCS100Clock)
+                {
+                    _data.fc.command = OPC_WR_SL_DATA;
+                    _locoNet.send (&_data);
+                }
+                else if (_updateCallback)
+                {
+                    _updateCallback (_data.fc.clk_rate, _data.fc.days,
+                                     (_data.fc.hours_24 >= (128-24)) ? _data.fc.hours_24 - (128-24) : _data.fc.hours_24 % 24,
+                                     _data.fc.mins_60 - (127-60), false);
+                }
+            }
+        }
+        if (_fractionalMinCallback)
+        {
+            _fractionalMinCallback (FC_FRAC_MIN_BASE - ( (_data.fc.frac_minsh << 7) + _data.fc.frac_minsl));
+        }
+    }
+
+    if (_state == FC_ST_IDLE)
+    {
+        _locoNet.send (OPC_RQ_SL_DATA, FC_SLOT, 0);
+        _state = FC_ST_REQ_TIME;
+    }
 }

@@ -61,21 +61,22 @@
 #include "ln_opc.h"
 
 #ifndef LN_BUF_SIZE
-#define LN_BUF_SIZE (sizeof(lnMsg))
+    #define LN_BUF_SIZE (sizeof(lnMsg))
 #endif
 
-class LocoNetMessageBuffer {
-  private:
-	uint8_t     		buffer[LN_BUF_SIZE];
-  	uint8_t     		index;
-  	uint8_t     		checkSum;
-  	uint8_t     		expLen;
-	lnMsg 			*getMsg();
+class LocoNetMessageBuffer
+{
+private:
+    uint8_t     		buffer[LN_BUF_SIZE];
+    uint8_t     		index;
+    uint8_t     		checkSum;
+    uint8_t     		expLen;
+    lnMsg 			*getMsg();
 
-  public:
-  	LocoNetMessageBuffer();
-	lnMsg 			*addByte(uint8_t newByte);
+public:
+    LocoNetMessageBuffer();
+    lnMsg 			*addByte (uint8_t newByte);
 
-  	LnRxStats  		stats ;
+    LnRxStats  		stats ;
 };
 

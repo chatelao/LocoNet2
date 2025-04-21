@@ -39,37 +39,37 @@
 #include <LocoNetStreamSTM32.h>
 #include <stm32yyxx_ll_usart.h>
 
-LocoNetStreamSTM32::LocoNetStreamSTM32(HardwareSerial * serialPort, uint8_t rxPin, uint8_t txPin, LocoNetBus *bus, bool rxPinInvert, bool txPinInvert) : LocoNetStream(bus)
+LocoNetStreamSTM32::LocoNetStreamSTM32 (HardwareSerial * serialPort, uint8_t rxPin, uint8_t txPin, LocoNetBus *bus, bool rxPinInvert, bool txPinInvert) : LocoNetStream (bus)
 {
-	_serialPort = serialPort;
-	_rxPin = rxPin;
-	_txPin = txPin;
-	_rxPinInvert = rxPinInvert;
-	_txPinInvert = txPinInvert;
+    _serialPort = serialPort;
+    _rxPin = rxPin;
+    _txPin = txPin;
+    _rxPinInvert = rxPinInvert;
+    _txPinInvert = txPinInvert;
 };
 
-void LocoNetStreamSTM32::start(void)
+void LocoNetStreamSTM32::start (void)
 {
-	begin(_serialPort);
-	
-	_serialPort->setRx(_rxPin);
-	_serialPort->setTx(_txPin);
-	
-	USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
-	
-	LL_USART_SetRXPinLevel(USARTx, (_rxPinInvert) ? LL_USART_RXPIN_LEVEL_INVERTED : LL_USART_RXPIN_LEVEL_STANDARD);
+    begin (_serialPort);
 
-	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
-		
-	_serialPort->begin(LOCONET_BAUD);
-	
-	_instance = this;
-	attachInterrupt(_rxPin, isr, FALLING);
+    _serialPort->setRx (_rxPin);
+    _serialPort->setTx (_txPin);
+
+    USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
+
+    LL_USART_SetRXPinLevel (USARTx, (_rxPinInvert) ? LL_USART_RXPIN_LEVEL_INVERTED : LL_USART_RXPIN_LEVEL_STANDARD);
+
+    LL_USART_SetTXPinLevel (USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
+
+    _serialPort->begin (LOCONET_BAUD);
+
+    _instance = this;
+    attachInterrupt (_rxPin, isr, FALLING);
 };
 
-void LocoNetStreamSTM32::finish(void)
+void LocoNetStreamSTM32::finish (void)
 {
-	detachInterrupt(_rxPin);
+    detachInterrupt (_rxPin);
 }
 
 // The Interrupt Handler glue was from this forum post:
@@ -77,42 +77,42 @@ void LocoNetStreamSTM32::finish(void)
 
 LocoNetStreamSTM32 * LocoNetStreamSTM32::_instance;
 
-void LocoNetStreamSTM32::isr(void)
+void LocoNetStreamSTM32::isr (void)
 {
-  _instance->handleLocoNetActivityInterrupt();
+    _instance->handleLocoNetActivityInterrupt();
 }
 
-void LocoNetStreamSTM32::handleLocoNetActivityInterrupt(void)
+void LocoNetStreamSTM32::handleLocoNetActivityInterrupt (void)
 {
-	_LastLocoNetActivityMicros = micros();
+    _LastLocoNetActivityMicros = micros();
 }
 
-bool LocoNetStreamSTM32::isBusy(void)
-{ 
-	if(!digitalRead(_rxPin))	// If the Rx Pin is LOW then the UART will be active so return true
-		return true;
-		 
-	return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
+bool LocoNetStreamSTM32::isBusy (void)
+{
+    if (!digitalRead (_rxPin))	// If the Rx Pin is LOW then the UART will be active so return true
+        return true;
+
+    return (micros() - _LastLocoNetActivityMicros) < LocoNetRxByteMicros;
 };
 
-void LocoNetStreamSTM32::beforeSend(void)
+void LocoNetStreamSTM32::beforeSend (void)
 {
 };
 
-void LocoNetStreamSTM32::afterSend(void)
+void LocoNetStreamSTM32::afterSend (void)
 {
 };
 
-void LocoNetStreamSTM32::sendBreak(void)
+void LocoNetStreamSTM32::sendBreak (void)
 {
-	// Generate a BREAK by inverting the UART Tx output to cause the LocoNet to be pulled-down, delay(), then revert the UART Tx output to normal polarity, to release the LocoNet
-	USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
-	
-	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_STANDARD : LL_USART_TXPIN_LEVEL_INVERTED);
-	
-	delayMicroseconds(CollisionTimeoutIncrement);
-	
-	LL_USART_SetTXPinLevel(USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
+    // Generate a BREAK by inverting the UART Tx output to cause the LocoNet to be pulled-down, delay(), then revert the UART Tx output to normal polarity, to release the LocoNet
+    USART_TypeDef * USARTx = _serialPort->getHandle()->Instance;
+
+    LL_USART_SetTXPinLevel (USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_STANDARD : LL_USART_TXPIN_LEVEL_INVERTED);
+
+    delayMicroseconds (CollisionTimeoutIncrement);
+
+    LL_USART_SetTXPinLevel (USARTx, (_txPinInvert) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
 };
 
 #endif

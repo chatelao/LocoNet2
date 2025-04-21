@@ -41,34 +41,35 @@
 
 #include "LocoNet2.h"
 
-class LocoNetStream: public LocoNetPhy {
-	public:
-		LocoNetStream(LocoNetBus *bus) : LocoNetPhy(bus), _state(LN_IDLE){};
-		
-		void begin(Stream * serialPort);
-		void end();
-		void process();
+class LocoNetStream: public LocoNetPhy
+{
+public:
+    LocoNetStream (LocoNetBus *bus) : LocoNetPhy (bus), _state (LN_IDLE) {};
+
+    void begin (Stream * serialPort);
+    void end();
+    void process();
 
 
-	protected:
-		LN_STATUS sendLocoNetPacketTry(uint8_t *packetData, uint8_t packetLen, unsigned char ucPrioDelay);
+protected:
+    LN_STATUS sendLocoNetPacketTry (uint8_t *packetData, uint8_t packetLen, unsigned char ucPrioDelay);
 
-		virtual bool isBusy(void);
-		virtual void sendBreak(void);
-		virtual void beforeSend(void);
-		virtual void afterSend(void);
-		
-	private:
-		void startCollisionTimer();
-		bool hasCollisionTimerExpired();
-		void startCDBackoffTimer();
-		bool hasCDBackoffTimerExpired(uint8_t PrioDelay = 0);
-		
-		Stream * 	_serialPort;
-		uint64_t 	_cdBackoffStart;
-		uint64_t 	_cdBackoffTimeout;
-		uint64_t 	_collisionTimeout;
-		LN_STATUS	_state;
+    virtual bool isBusy (void);
+    virtual void sendBreak (void);
+    virtual void beforeSend (void);
+    virtual void afterSend (void);
+
+private:
+    void startCollisionTimer();
+    bool hasCollisionTimerExpired();
+    void startCDBackoffTimer();
+    bool hasCDBackoffTimerExpired (uint8_t PrioDelay = 0);
+
+    Stream * 	_serialPort;
+    uint64_t 	_cdBackoffStart;
+    uint64_t 	_cdBackoffTimeout;
+    uint64_t 	_collisionTimeout;
+    LN_STATUS	_state;
 };
 
 
