@@ -29,7 +29,7 @@
  * 	to use this code, algorithm or these message formats outside of
  * 	MRRwA, please contact Digitrax Inc, for specific permission.
  *
- * 	Note: The sale any LocoNet device hardware (including bare PCB's) that
+ * 	Note: The sale any LocoNet device hardware (including bare PCB's' that
  * 	uses this or any other LocoNet software, requires testing and certification
  * 	by Digitrax Inc. and will be subject to a licensing agreement.
  *
@@ -40,7 +40,7 @@
  * 	IMPORTANT:
  *
  * 	Some of the message formats used in this code are Copyright Uhlenbrock Elektronik GmbH
- * 	and are used with permission as part of the MRRwA (previously EmbeddedLocoNet) project.
+ * 	and are used with permission as part of the MRRwA (previously EmbeddedLocoNet' project.
  *  That permission does not extend to uses in other software products. If you wish
  * 	to use this code, algorithm or these message formats outside of
  * 	MRRwA, please contact Copyright Uhlenbrock Elektronik GmbH, for specific permission.
