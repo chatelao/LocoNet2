@@ -21,6 +21,12 @@ Upon receiving a LocoNet message from outside world, the source classes send mes
 
 `LocoNet` class is now an alias for `LocoNetDispatcher`. Existing utility classes (`LocoNetThrottle`, `LocoNetFastClock` etc) still use `LocoNet` class and have not changed much. Probably they will work with minor modifications.
 
+## Documentation
+
+*   **[End-User Guide](docs/end-user-guide.md)**: A guide for users of the LocoNet2 library.
+*   **[Hardware Developer Guide](docs/hardware-developer-guide.md)**: A guide for developers who want to extend the LocoNet2 library to support new hardware.
+*   **[Contributor Guide](docs/contributor-guide.md)**: A guide for developers who want to contribute to the LocoNet2 project.
+
 Developers:
    Use of the supplied git pre-commit hook is encouraged.  This will require installation of the 'astyle' package for formatting source file.
    See http://astyle.sourceforge.net for details on this package.
